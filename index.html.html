@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lease Purchase Pay Comparison</title>
+<style>
+  :root {
+    --navy: #003A70; --navy-deep: #1A2744;
+    --orange: #F58220; --orange-deep: #E87722;
+    --paper: #f4f5f7; --line: #d9dde3; --ink: #2a2f38; --muted: #6b7280;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Segoe UI", Arial, sans-serif; background: var(--paper); color: var(--ink); line-height: 1.5; padding: 24px 16px 48px; }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  header { background: var(--navy-deep); border-radius: 10px 10px 0 0; padding: 26px 30px; border-bottom: 5px solid var(--orange); }
+  header h1 { color: #fff; font-size: 26px; letter-spacing: .3px; }
+  header p { color: #c9d3e0; margin-top: 6px; font-size: 15px; }
+
+  .panels { display: grid; grid-template-columns: 1fr 64px 1fr; gap: 0; align-items: stretch; }
+  @media (max-width: 820px) { .panels { grid-template-columns: 1fr; } .vs { order: -1; } }
+  .panel { background: #fff; border: 1px solid var(--line); padding: 22px; }
+  .panel.left { border-radius: 0 0 0 10px; border-right: none; }
+  .panel.right { border-radius: 0 0 10px 0; border-left: none; }
+  @media (max-width: 820px) { .panel.left, .panel.right { border-radius: 0; border: 1px solid var(--line); } }
+  .panel h2 { font-size: 18px; color: var(--navy); border-bottom: 2px solid var(--orange); padding-bottom: 8px; margin-bottom: 4px; }
+  .panel .sub { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+
+  .vs { display: flex; align-items: center; justify-content: center; background: var(--navy-deep); }
+  .vs span { color: #fff; font-weight: 700; font-size: 18px; background: var(--orange); width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  @media (max-width: 820px) { .vs { padding: 12px; border-radius: 0; } }
+
+  .load-row { display: grid; grid-template-columns: 78px 1fr 92px; gap: 10px; align-items: center; margin-bottom: 10px; }
+  .load-row label { font-size: 13px; color: var(--muted); font-weight: 600; }
+  .load-row input { width: 100%; padding: 9px 10px; border: 1px solid var(--line); border-radius: 6px; font-size: 15px; text-align: right; }
+  .load-row input:focus { outline: none; border-color: var(--orange); }
+  .load-row .cpm { font-size: 13px; color: var(--navy); text-align: right; font-weight: 600; }
+  .load-row .cpm small { display:block; color: var(--muted); font-weight: 400; font-size: 11px; }
+
+  .panel-total { margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--line); }
+  .panel-total .miles { font-size: 13px; color: var(--muted); }
+  .panel-total .pay { font-size: 30px; font-weight: 700; color: var(--navy); margin-top: 2px; }
+  .panel-total .eff { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  .verdict { background: #fff; border: 1px solid var(--line); border-top: 4px solid var(--orange); border-radius: 10px; margin-top: 18px; padding: 22px 26px; text-align: center; }
+  .verdict .head { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+  .verdict .winner { font-size: 22px; font-weight: 700; color: var(--navy); margin: 6px 0; }
+  .verdict .diff { font-size: 16px; color: var(--orange-deep); font-weight: 600; }
+  .verdict .neutral { font-size: 18px; color: var(--muted); font-weight: 600; }
+
+  .scale { margin-top: 26px; background: #fff; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .scale-head { background: var(--orange); color: #fff; padding: 10px 14px; font-size: 15px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .scale-head .title { font-weight: 600; }
+  .scale table { width: 100%; border-collapse: collapse; }
+  .scale th, .scale td { padding: 7px 12px; font-size: 13px; border-bottom: 1px solid var(--line); text-align: center; }
+  .scale thead th { background: var(--navy-deep); color: #fff; }
+  .scale tbody tr:nth-child(even) { background: #fafbfc; }
+  .scale.editing td { background: #fff8f1; }
+  .scale td input { width: 90px; padding: 5px 6px; border: 1px solid var(--line); border-radius: 5px; font-size: 13px; text-align: center; }
+  .scale td input:focus { outline: none; border-color: var(--orange); }
+  .scale td .del { background: none; border: none; color: #c0392b; cursor: pointer; font-size: 16px; line-height: 1; }
+  .scale-actions { padding: 12px 14px; background: #fafbfc; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .scale-actions .spacer { flex: 1; }
+
+  .btn { border: none; border-radius: 6px; padding: 8px 16px; font-size: 13px; cursor: pointer; font-weight: 600; }
+  .btn-orange { background: var(--orange); color: #fff; }
+  .btn-orange:hover { background: var(--orange-deep); }
+  .btn-navy { background: var(--navy); color: #fff; }
+  .btn-navy:hover { background: var(--navy-deep); }
+  .btn-ghost { background: #fff; border: 1px solid var(--line); color: var(--muted); }
+  .btn-ghost:hover { border-color: var(--orange); color: var(--orange-deep); }
+
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--navy-deep); color: #fff; padding: 10px 20px; border-radius: 8px; font-size: 14px; opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 50; }
+  .toast.show { opacity: 1; }
+
+  .note { font-size: 12px; color: var(--muted); margin-top: 16px; text-align: center; }
+  .center { text-align: center; }
+  .tools { margin-top: 14px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+
+  /* export box */
+  .export { margin-top: 14px; background:#fff; border:1px solid var(--line); border-radius:10px; padding:16px; display:none; }
+  .export h4 { font-size: 14px; color: var(--navy); margin-bottom: 8px; }
+  .export p { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+  .export textarea { width:100%; height:200px; font-family: Consolas, monospace; font-size:12px; border:1px solid var(--line); border-radius:6px; padding:10px; resize:vertical; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Lease Purchase Pay Comparison</h1>
+  </header>
+
+  <div class="panels">
+    <div class="panel left">
+      <h2>Option 1</h2>
+      <div class="sub">Enter the miles for each load (up to 5).</div>
+      <div id="optA"></div>
+      <div class="panel-total">
+        <div class="miles">Total miles: <span id="milesA">0</span></div>
+        <div class="pay" id="payA">$0.00</div>
+        <div class="eff" id="effA"></div>
+      </div>
+    </div>
+    <div class="vs"><span>VS</span></div>
+    <div class="panel right">
+      <h2>Option 2</h2>
+      <div class="sub">Enter the miles for each load (up to 5).</div>
+      <div id="optB"></div>
+      <div class="panel-total">
+        <div class="miles">Total miles: <span id="milesB">0</span></div>
+        <div class="pay" id="payB">$0.00</div>
+        <div class="eff" id="effB"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="verdict" id="verdict">
+    <div class="head">Difference in Pay</div>
+    <div class="neutral">Enter miles to compare</div>
+  </div>
+
+  <div class="scale" id="scale">
+    <div class="scale-head">
+      <span class="title">Sliding Pay Scale &mdash; CPM (Practical) by Length of Haul</span>
+      <button class="btn btn-ghost" id="editBtn" onclick="toggleEdit()">Edit pay scale</button>
+    </div>
+    <table>
+      <thead><tr><th>Miles (LDD &amp; MT)</th><th>CPM</th></tr></thead>
+      <tbody id="scaleBody"></tbody>
+    </table>
+    <div class="scale-actions" id="scaleActions" style="display:none;">
+      <button class="btn btn-ghost" onclick="addTier()">+ Add tier</button>
+      <span class="spacer"></span>
+      <button class="btn btn-ghost" onclick="cancelEdit()">Cancel</button>
+      <button class="btn btn-orange" onclick="saveEdit()">Save &amp; get config</button>
+    </div>
+  </div>
+
+  <div class="export" id="exportBox">
+    <h4>Updated payscale.json</h4>
+    <p>Copy everything below, paste it into your <strong>payscale.json</strong> file (replacing what's there), save, and re-upload to GitHub. The live calculator updates automatically.</p>
+    <textarea id="exportText" readonly onclick="this.select()"></textarea>
+    <div style="margin-top:10px;"><button class="btn btn-navy" onclick="copyConfig()">Copy config</button></div>
+  </div>
+
+  <div class="tools">
+    <button class="btn btn-ghost" onclick="resetAll()">Reset miles</button>
+  </div>
+
+  <div class="note" id="footNote"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const DEFAULT_SCALE = [
+    {upTo:20,cpm:2.85},{upTo:75,cpm:2.00},{upTo:150,cpm:1.85},{upTo:275,cpm:1.70},
+    {upTo:425,cpm:1.45},{upTo:600,cpm:1.35},{upTo:800,cpm:1.28},{upTo:1000,cpm:1.25},
+    {upTo:1200,cpm:1.20},{upTo:1800,cpm:1.13},{upTo:null,cpm:1.12}
+  ];
+  const DEFAULT_FOOT = "Pay shown is line-haul pay per load based on its individual length of haul. Stop pay, fuel, bonuses, and other charges are not included. Cost Center 106 and 150.";
+
+  let scale = JSON.parse(JSON.stringify(DEFAULT_SCALE));
+  let footnote = DEFAULT_FOOT;
+  let editBackup = null, editing = false;
+
+  async function init() {
+    buildRows("optA","a"); buildRows("optB","b");
+    await loadConfig();
+    renderScale(); renderFoot(); calc();
+  }
+
+  async function loadConfig() {
+    try {
+      const res = await fetch("payscale.json?v=" + Date.now()); // cache-bust
+      if (!res.ok) throw new Error("no file");
+      const cfg = await res.json();
+      if (cfg.tiers && Array.isArray(cfg.tiers) && cfg.tiers.length) {
+        scale = normalize(cfg.tiers.map(t => ({
+          upTo: (t.upTo === null || t.upTo === undefined) ? null : Number(t.upTo),
+          cpm: Number(t.cpm)
+        })));
+      }
+      if (typeof cfg.footnote === "string") footnote = cfg.footnote;
+    } catch (e) {
+      // payscale.json missing or opened via file:// — fall back to built-in defaults
+      scale = JSON.parse(JSON.stringify(DEFAULT_SCALE));
+      footnote = DEFAULT_FOOT;
+    }
+  }
+
+  function normalize(arr) {
+    const finite = arr.filter(t => t.upTo !== null && t.upTo !== undefined).sort((a,b)=>a.upTo-b.upTo);
+    const open = arr.filter(t => t.upTo === null || t.upTo === undefined);
+    const result = finite.slice();
+    if (open.length) result.push({upTo:null, cpm: open[0].cpm});
+    else if (result.length) result[result.length-1] = {upTo:null, cpm: result[result.length-1].cpm};
+    return result;
+  }
+
+  function cpmFor(miles) {
+    for (const t of scale) { if (t.upTo === null || miles <= t.upTo) return t.cpm; }
+    return scale.length ? scale[scale.length-1].cpm : 0;
+  }
+  function tierLabel(i) {
+    const lo = i === 0 ? 1 : (scale[i-1].upTo + 1);
+    const t = scale[i];
+    return t.upTo === null ? lo.toLocaleString()+"+" : lo.toLocaleString()+" - "+t.upTo.toLocaleString();
+  }
+  function money(n){ return "$"+n.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+  function buildRows(containerId, prefix) {
+    const c = document.getElementById(containerId); c.innerHTML = "";
+    for (let i=1;i<=5;i++){
+      const row=document.createElement("div"); row.className="load-row";
+      row.innerHTML='<label>Load '+i+'</label>'+
+        '<input type="number" min="0" inputmode="numeric" placeholder="miles" id="'+prefix+i+'" oninput="calc()">'+
+        '<div class="cpm" id="'+prefix+i+'cpm">&mdash;</div>';
+      c.appendChild(row);
+    }
+  }
+
+  function sidePay(prefix){
+    let miles=0,pay=0;
+    for(let i=1;i<=5;i++){
+      const v=parseFloat(document.getElementById(prefix+i).value)||0;
+      const cell=document.getElementById(prefix+i+"cpm");
+      if(v>0){ const cpm=cpmFor(v); const lp=v*cpm; miles+=v; pay+=lp;
+        cell.innerHTML=cpm.toFixed(2)+" CPM<small>"+money(lp)+"</small>"; }
+      else cell.innerHTML="&mdash;";
+    }
+    return {miles,pay};
+  }
+
+  function calc(){
+    const a=sidePay("a"), b=sidePay("b");
+    document.getElementById("milesA").textContent=a.miles.toLocaleString();
+    document.getElementById("milesB").textContent=b.miles.toLocaleString();
+    document.getElementById("payA").textContent=money(a.pay);
+    document.getElementById("payB").textContent=money(b.pay);
+    document.getElementById("effA").textContent=a.miles?(money(a.pay/a.miles)+" avg per mile"):"";
+    document.getElementById("effB").textContent=b.miles?(money(b.pay/b.miles)+" avg per mile"):"";
+    const v=document.getElementById("verdict");
+    if(a.pay===0&&b.pay===0){ v.innerHTML='<div class="head">Difference in Pay</div><div class="neutral">Enter miles to compare</div>'; return; }
+    const diff=Math.abs(a.pay-b.pay);
+    if(diff<0.005){ v.innerHTML='<div class="head">Difference in Pay</div><div class="neutral">Both options pay the same: '+money(a.pay)+'</div>'; }
+    else { const w=a.pay>b.pay?"Option 1":"Option 2";
+      v.innerHTML='<div class="head">Difference in Pay</div><div class="winner">'+w+' pays more</div><div class="diff">+'+money(diff)+'</div>'; }
+  }
+
+  function renderScale(){
+    const sb=document.getElementById("scaleBody"); sb.innerHTML="";
+    scale.forEach((t,i)=>{
+      const tr=document.createElement("tr");
+      if(editing){
+        const open=t.upTo===null;
+        tr.innerHTML='<td>'+(i===0?1:(scale[i-1].upTo+1))+' &ndash; '+
+          (open?'<em>and up</em>':'<input type="number" min="1" value="'+t.upTo+'" onchange="setUpTo('+i+',this.value)">')+'</td>'+
+          '<td><input type="number" step="0.01" min="0" value="'+t.cpm.toFixed(2)+'" onchange="setCpm('+i+',this.value)">'+
+          (scale.length>1?' <button class="del" title="Remove" onclick="removeTier('+i+')">&times;</button>':'')+'</td>';
+      } else {
+        tr.innerHTML='<td>'+tierLabel(i)+'</td><td>'+t.cpm.toFixed(2)+'</td>';
+      }
+      sb.appendChild(tr);
+    });
+  }
+  function renderFoot(){ document.getElementById("footNote").textContent = footnote; }
+
+  function toggleEdit(){ editing?cancelEdit():startEdit(); }
+  function startEdit(){
+    editBackup=JSON.parse(JSON.stringify(scale)); editing=true;
+    document.getElementById("scale").classList.add("editing");
+    document.getElementById("editBtn").textContent="Editing…";
+    document.getElementById("scaleActions").style.display="flex";
+    document.getElementById("exportBox").style.display="none";
+    renderScale();
+  }
+  function cancelEdit(){ if(editBackup)scale=editBackup; endEdit(); }
+  function saveEdit(){ scale=normalize(scale); endEdit(); calc(); showExport(); showToast("Scale updated on screen"); }
+  function endEdit(){
+    editing=false; editBackup=null;
+    document.getElementById("scale").classList.remove("editing");
+    document.getElementById("editBtn").textContent="Edit pay scale";
+    document.getElementById("scaleActions").style.display="none";
+    renderScale();
+  }
+  function setUpTo(i,v){ scale[i].upTo=Math.max(1,parseInt(v)||1); }
+  function setCpm(i,v){ scale[i].cpm=Math.max(0,parseFloat(v)||0); }
+  function addTier(){
+    const oi=scale.findIndex(t=>t.upTo===null);
+    const last=oi>0?scale[oi-1].upTo:0;
+    const nt={upTo:last+100,cpm:scale.length?scale[scale.length-1].cpm:1.00};
+    if(oi===-1)scale.push(nt); else scale.splice(oi,0,nt);
+    renderScale();
+  }
+  function removeTier(i){
+    scale.splice(i,1);
+    if(!scale.some(t=>t.upTo===null)&&scale.length) scale[scale.length-1].upTo=null;
+    renderScale();
+  }
+
+  function showExport(){
+    const cfg = {
+      _comment: "Edit the tiers below to update the sliding pay scale. 'upTo' is the top mileage for that tier; the LAST tier must use null to mean 'and up'. 'cpm' is the pay per mile. After editing, save this file and re-upload it to GitHub. No need to touch index.html.",
+      footnote: footnote,
+      tiers: scale.map(t => ({upTo: t.upTo, cpm: Number(t.cpm)}))
+    };
+    document.getElementById("exportText").value = JSON.stringify(cfg, null, 2);
+    document.getElementById("exportBox").style.display = "block";
+  }
+  function copyConfig(){
+    const ta=document.getElementById("exportText");
+    ta.select();
+    navigator.clipboard.writeText(ta.value).then(
+      ()=>showToast("Config copied — paste into payscale.json"),
+      ()=>{ document.execCommand("copy"); showToast("Config copied"); }
+    );
+  }
+
+  function resetAll(){ document.querySelectorAll(".load-row input").forEach(el=>el.value=""); calc(); }
+
+  let toastTimer;
+  function showToast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove("show"),2400); }
+
+  init();
+</script>
+</body>
+</html>
