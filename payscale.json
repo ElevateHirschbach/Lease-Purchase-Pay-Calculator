@@ -1,0 +1,17 @@
+{
+  "_comment": "Edit the tiers below to update the sliding pay scale. 'upTo' is the top mileage for that tier; the LAST tier must use null to mean 'and up'. 'cpm' is the pay per mile. After editing, save this file and re-upload it to GitHub. No need to touch index.html.",
+  "footnote": "Pay shown is line-haul pay per load based on its individual length of haul. Stop pay, fuel, bonuses, and other charges are not included. Cost Center 106 and 150.",
+  "tiers": [
+    { "upTo": 20,   "cpm": 2.85 },
+    { "upTo": 75,   "cpm": 2.00 },
+    { "upTo": 150,  "cpm": 1.85 },
+    { "upTo": 275,  "cpm": 1.70 },
+    { "upTo": 425,  "cpm": 1.45 },
+    { "upTo": 600,  "cpm": 1.35 },
+    { "upTo": 800,  "cpm": 1.28 },
+    { "upTo": 1000, "cpm": 1.25 },
+    { "upTo": 1200, "cpm": 1.20 },
+    { "upTo": 1800, "cpm": 1.13 },
+    { "upTo": null, "cpm": 1.12 }
+  ]
+}
